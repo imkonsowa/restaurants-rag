@@ -1,11 +1,9 @@
 # Introduction
 
-A playground for building a simple AI agent using golang. The application is a restaurant search interface that finds
+A playground for building a simple AI agent using golang. The app is a restaurant search interface that finds
 restaurants by free text search.
 
-**(Note)**: This is not meant to be a 100% microservices app, I have simplified a lot of things like having a shared
-config between all running containers, not having a separate database for each service, etc. This is just to learn how
-to build a simple AI agent using golang.
+**(Note)**:  This is not meant for production, it's a learning playground.
 
 # Pre-requisites
 
@@ -23,13 +21,13 @@ to build a simple AI agent using golang.
 # Run the code
 
 - Clone the repository
-- Run the following command to build docker images and run the application using docker-compose:
+- Run this command to build and run the application:
 
 ```bash
 make run
 ```
 
-- Add restaurants to the database from `restaurants_sample.json` file using the following command:
+- Add restaurants to the database from `restaurants_sample.json`:
 
 ```bash
 make add-restaurants
