@@ -82,10 +82,9 @@ func (s *Pg) Search(
 	menuQuery := s.db.WithContext(ctx).
 		Table("menu_items").
 		Select("menu_items.*, restaurant_id, 1 - (menu_items.embedding <=> ?) as mi_similarity", vectorStr).
-		Where("1 - (menu_items.embedding <=> ?) >= 0.4", vectorStr).
+		Where("1 - (menu_items.embedding <=> ?) >= 0.5", vectorStr).
 		Order("mi_similarity DESC").
-		Joins("JOIN restaurants ON menu_items.restaurant_id = restaurants.id").
-		Limit(10)
+		Joins("JOIN restaurants ON menu_items.restaurant_id = restaurants.id")
 
 	if filter.MaxDistance > 0 && filter.Location != nil {
 		restaurantQuery = restaurantQuery.Where("ST_Distance(location::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)) <= ?", filter.Location.Lat, filter.Location.Long, filter.MaxDistance)
