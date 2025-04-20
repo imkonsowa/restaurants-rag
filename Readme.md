@@ -35,6 +35,14 @@ make add-restaurants
 
 - Access the application at http://localhost:8000
 
+# Search Restaurant
+
+Test the following queries in the search input:
+
+- `find me a nearby sushi restaurant`
+- `find me a nearby kabab restaurant`
+
+
 ## Directory Structure
 
 ```
