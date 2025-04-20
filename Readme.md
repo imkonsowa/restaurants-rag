@@ -10,6 +10,10 @@ restaurants by free text search.
 - Docker
 - Docker Compose
 - Make
+- Ollama: https://ollama.com/
+  - `ollama pull deepseek-r1:latest`
+  - `ollama pull deepseek-r1:1.5b`
+  - `ollama pull nomic-embed-text:latest`
 
 # Tech Stack
 
