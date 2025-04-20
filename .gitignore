@@ -1,0 +1,12 @@
+.idea
+.vscode
+node_modules
+dist
+ignore
+.env
+
+*/.driver
+*/html/*
+*/restaurant_data/*
+playground
+*.db

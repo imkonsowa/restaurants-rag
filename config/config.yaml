@@ -1,0 +1,30 @@
+postgres:
+  host: postgis
+  port: 5432
+  user: postgres
+  password: postgres
+  database: restaurants
+  sslmode: disable
+
+nats:
+  host: nats
+  port: 4222
+  stream: cdc
+  restaurantsSubject: cdc.restaurants
+  menuItemsSubject: cdc.menuItems
+  categoriesSubject: cdc.categories
+
+ollama:
+  host: host.docker.internal
+  port: 11434
+  embeddingModel: nomic-embed-text:latest
+  contextModel: deepseek-r1:1.5b
+  parserModel: deepseek-r1:1.5b
+
+replication:
+  slot: cdc
+  name: cdc
+
+server:
+  port: 8080
+  host: 0.0.0.0

@@ -1,0 +1,294 @@
+{
+  "restaurants": [
+    {
+      "name": "Sea Fresh",
+      "area": "Cairo",
+      "location": {
+        "longitude": 31.2357,
+        "latitude": 30.0444
+      },
+      "rating": 4.5,
+      "menu_items": [
+        {
+          "name": "Butterfly",
+          "price": 25.99,
+          "description": "A delicious butterfly shrimp served with a tangy cocktail sauce.",
+          "category": "Appetizer"
+        },
+        {
+          "name": "Grilled Salmon",
+          "price": 18.50,
+          "description": "Fresh salmon fillet grilled to perfection with a lemon butter sauce.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Lobster Roll",
+          "price": 22.00,
+          "description": "A classic lobster roll served with a side of fries.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Crab Cakes",
+          "price": 15.99,
+          "description": "Two crab cakes served with a spicy remoulade sauce.",
+          "category": "Appetizer"
+        },
+        {
+          "name": "Fish Tacos",
+          "price": 12.50,
+          "description": "Three fish tacos topped with cabbage slaw and avocado crema.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Clam Chowder",
+          "price": 8.99,
+          "description": "A creamy clam chowder served with oyster crackers.",
+          "category": "Soup"
+        },
+        {
+          "name": "Shrimp Scampi",
+          "price": 19.99,
+          "description": "Shrimp sautéed in garlic butter and white wine, served over pasta.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Fish and Chips",
+          "price": 14.99,
+          "description": "Battered fish served with fries and tartar sauce.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Seafood Paella",
+          "price": 24.99,
+          "description": "A traditional Spanish dish with rice, saffron, and a variety of seafood.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Tuna Tartare",
+          "price": 16.50,
+          "description": "Fresh tuna tartare served with avocado and sesame soy dressing.",
+          "category": "Appetizer"
+        }
+      ]
+    },
+    {
+      "name": "Pasta Palace",
+      "area": "Cairo",
+      "location": {
+        "longitude": 31.2357,
+        "latitude": 30.0444
+      },
+      "rating": 4.7,
+      "menu_items": [
+        {
+          "name": "Spaghetti Carbonara",
+          "price": 12.99,
+          "description": "Classic spaghetti with pancetta, egg, and cheese.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Fettuccine Alfredo",
+          "price": 14.99,
+          "description": "Fettuccine pasta in a creamy Alfredo sauce.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Lasagna",
+          "price": 16.50,
+          "description": "Layers of pasta, meat, and cheese baked to perfection.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Pesto Pasta",
+          "price": 11.99,
+          "description": "Pasta tossed in a fresh basil pesto sauce.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Ravioli",
+          "price": 13.50,
+          "description": "Homemade ravioli stuffed with ricotta and spinach.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Margherita Pizza",
+          "price": 10.99,
+          "description": "Classic pizza topped with fresh mozzarella and basil.",
+          "category": "Pizza"
+        },
+        {
+          "name": "Baked Ziti",
+          "price": 12.50,
+          "description": "Ziti pasta baked with marinara sauce and cheese.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Seafood Linguine",
+          "price": 18.99,
+          "description": "Linguine pasta with shrimp, clams, and mussels in a white wine sauce.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Pasta Primavera",
+          "price": 13.99,
+          "description": "Pasta tossed with seasonal vegetables in a light garlic sauce.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Tortellini Soup",
+          "price": 9.99,
+          "description": "A hearty soup with tortellini and vegetables.",
+          "category": "Soup"
+        },
+        {
+          "name": "Pasta Salad",
+          "price": 8.99,
+          "description": "A refreshing salad with pasta, vegetables, and Italian dressing.",
+          "category": "Salad"
+        }
+      ]
+    },
+    {
+      "name": "Sushi World",
+      "area": "Cairo",
+      "location": {
+        "longitude": 31.2357,
+        "latitude": 30.0444
+      },
+      "rating": 4.8,
+      "menu_items": [
+        {
+          "name": "California Roll",
+          "price": 8.99,
+          "description": "A sushi roll with crab, avocado, and cucumber.",
+          "category": "Sushi"
+        },
+        {
+          "name": "Spicy Tuna Roll",
+          "price": 10.99,
+          "description": "A sushi roll with spicy tuna and avocado.",
+          "category": "Sushi"
+        },
+        {
+          "name": "Sashimi Platter",
+          "price": 18.50,
+          "description": "An assortment of fresh sashimi served with soy sauce.",
+          "category": "Sashimi"
+        },
+        {
+          "name": "Tempura Udon",
+          "price": 12.50,
+          "description": "Udon noodles in a savory broth with tempura shrimp.",
+          "category": "Noodles"
+        },
+        {
+          "name": "Teriyaki Chicken",
+          "price": 14.99,
+          "description": "Grilled chicken glazed with teriyaki sauce, served with rice.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Miso Soup",
+          "price": 4.99,
+          "description": "A traditional Japanese soup made with miso paste and tofu.",
+          "category": "Soup"
+        },
+        {
+          "name": "Edamame",
+          "price": 5.99,
+          "description": "Steamed edamame sprinkled with sea salt.",
+          "category": "Appetizer"
+        },
+        {
+          "name": "Poke Bowl",
+          "price": 15.99,
+          "description": "A bowl of rice topped with fresh fish and vegetables.",
+          "category": "Bowl"
+        },
+        {
+          "name": "Dumplings",
+          "price": 7.99,
+          "description": "Steamed dumplings filled with pork and vegetables.",
+          "category": "Appetizer"
+        },
+        {
+          "name": "Green Tea Ice Cream",
+          "price": 6.50,
+          "description": "Creamy green tea ice cream for dessert.",
+          "category": "Dessert"
+        }
+      ]
+    },
+    {
+      "name": "Kabab Prince",
+      "area": "Cairo",
+      "location": {
+        "longitude": 31.2357,
+        "latitude": 30.0444
+      },
+      "rating": 4.6,
+      "menu_items": [
+        {
+          "name": "Chicken Shawarma",
+          "price": 9.99,
+          "description": "Marinated chicken wrapped in pita bread with garlic sauce.",
+          "category": "Wrap"
+        },
+        {
+          "name": "Lamb Kebabs",
+          "price": 12.50,
+          "description": "Grilled lamb skewers served with rice and salad.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Falafel Platter",
+          "price": 8.99,
+          "description": "Crispy falafel served with hummus and pita bread.",
+          "category": "Appetizer"
+        },
+        {
+          "name": "Hummus",
+          "price": 5.99,
+          "description": "Creamy chickpea dip served with pita chips.",
+          "category": "Appetizer"
+        },
+        {
+          "name": "Tabbouleh Salad",
+          "price": 7.50,
+          "description": "A refreshing salad made with parsley, tomatoes, and bulgur.",
+          "category": "Salad"
+        },
+        {
+          "name": "Baklava",
+          "price": 4.99,
+          "description": "A sweet pastry made with layers of phyllo dough and nuts.",
+          "category": "Dessert"
+        },
+        {
+          "name": "Stuffed Grape Leaves",
+          "price": 6.50,
+          "description": "Grape leaves stuffed with rice and spices.",
+          "category": "Appetizer"
+        },
+        {
+          "name": "Kofta Kebab",
+          "price": 11.99,
+          "description": "Ground meat skewers grilled to perfection.",
+          "category": "Main Course"
+        },
+        {
+          "name": "Fattoush Salad",
+          "price": 7.99,
+          "description": "A salad made with mixed greens, tomatoes, and crispy pita chips.",
+          "category": "Salad"
+        },
+        {
+          "name": "Mint Tea",
+          "price": 3.50,
+          "description": "Traditional mint tea served hot or cold.",
+          "category": "Beverage"
+        }
+      ]
+    }
+  ]
+}

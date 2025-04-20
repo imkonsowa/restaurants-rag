@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>LLMs Restaurants Search</title>
+        <!-- Include Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Include HTMX -->
+        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+        <!-- Include marked library for markdown rendering -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    </head>
+    <body class="bg-gray-100 min-h-screen overflow-hidden">
+        <div class="container mx-auto px-4 py-4 max-w-6xl h-screen flex flex-col">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">LLMs Restaurants Search</h1>
+
+            <div class="flex flex-col md:flex-row gap-6 flex-grow overflow-hidden">
+                <!-- Left Sidebar - Chat Interface -->
+                <div class="w-full md:w-1/2 flex flex-col h-full">
+                    <div class="bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                        <!-- Input Section -->
+                        <form
+                                id="searchForm"
+                                class="space-y-4 flex-shrink-0"
+                                onsubmit="handleSubmit(event)"
+                        >
+                            <textarea
+                                    name="query"
+                                    id="queryInput"
+                                    class="w-full h-24 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    placeholder="Enter your search query..."
+                                    required
+                            ></textarea>
+
+                            <button
+                                    type="submit"
+                                    class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 ease-in-out"
+                            >
+                                Search
+                            </button>
+                        </form>
+
+                        <!-- Status and Results -->
+                        <div id="status" class="mt-4 p-2 rounded-lg text-sm hidden flex-shrink-0"></div>
+
+                        <div
+                                id="results"
+                                class="mt-4 border border-gray-200 rounded-lg flex-grow overflow-y-auto bg-gray-50"
+                        ></div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar - Restaurants Display -->
+                <div class="w-full md:w-1/2 flex flex-col h-full">
+                    <div class="bg-white rounded-lg shadow-md p-6 flex flex-col h-full">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex-shrink-0">Restaurants</h2>
+                        <div id="restaurantsContainer" class="overflow-y-auto flex-grow space-y-4">
+                            <!-- Restaurant cards will be displayed here -->
+                            <div class="text-gray-500 italic text-center py-8">
+                                Restaurant information will appear here after your search
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Adjust heights on load and resize
+            function adjustHeights() {
+                const vh = window.innerHeight;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            }
+
+            window.addEventListener('load', adjustHeights);
+            window.addEventListener('resize', adjustHeights);
+
+            // Function to get user's location
+            function getUserLocation() {
+                if ("geolocation" in navigator) {
+                    // Request location permission and get coordinates
+                    navigator.geolocation.getCurrentPosition(
+                            // Success callback
+                            function(position) {
+                                const latitude = position.coords.latitude;
+                                const longitude = position.coords.longitude;
+                                console.log("Latitude:", latitude);
+                                console.log("Longitude:", longitude);
+                            },
+                            // Error callback
+                            function(error) {
+                                let errorMessage;
+                                switch(error.code) {
+                                    case error.PERMISSION_DENIED:
+                                        errorMessage = "Location access denied. Please enable location services.";
+                                        break;
+                                    case error.POSITION_UNAVAILABLE:
+                                        errorMessage = "Location information unavailable.";
+                                        break;
+                                    case error.TIMEOUT:
+                                        errorMessage = "Location request timed out.";
+                                        break;
+                                    default:
+                                        errorMessage = "An unknown error occurred.";
+                                }
+                                console.error("Error getting location:", errorMessage);
+                            },
+                            {
+                                enableHighAccuracy: true,  // Get the most accurate position
+                                timeout: 5000,            // Time to wait before timeout (5 seconds)
+                                maximumAge: 0             // Don't use cached position
+                            }
+                    );
+                } else {
+                    console.error("Geolocation is not supported by this browser.");
+                }
+            }
+
+            // Call the function when the page loads
+            document.addEventListener('DOMContentLoaded', getUserLocation);
+
+            // Function to create a restaurant card
+            function createRestaurantCard(restaurant) {
+                const hasMenuItems = restaurant.menu_items && restaurant.menu_items.length > 0;
+
+                const card = document.createElement('div');
+                card.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow';
+
+                // Restaurant details
+                const restaurantInfo = document.createElement('div');
+                restaurantInfo.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-semibold text-lg">${restaurant.restaurant.name}</h3>
+                        <span class="${getRatingClass(restaurant.restaurant.rating)} text-sm font-medium px-2 py-1 rounded-full">Review: ${restaurant.restaurant.rating || 'N/A'}/5</span>
+                    </div>
+                    <p class="text-gray-600 text-sm">${restaurant.restaurant.area}</p>
+
+                    ${restaurant.restaurant.badges && restaurant.restaurant.badges.length > 0 ? `
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            ${restaurant.restaurant.badges.map(badge =>
+                        `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">${badge}</span>`
+                ).join('')}
+                        </div>
+                    ` : ''}
+                `;
+                card.appendChild(restaurantInfo);
+
+                // Menu items (if available)
+                if (hasMenuItems) {
+                    const menuSection = document.createElement('div');
+                    menuSection.className = 'mt-4 border-t border-gray-200 pt-3';
+
+                    const menuHeader = document.createElement('h4');
+                    menuHeader.className = 'text-sm font-medium text-gray-700 mb-2';
+                    menuHeader.textContent = 'Menu Highlights';
+                    menuSection.appendChild(menuHeader);
+
+                    const menuList = document.createElement('ul');
+                    menuList.className = 'space-y-2';
+
+                    restaurant.menu_items.forEach(item => {
+                        const menuItem = document.createElement('li');
+                        menuItem.className = 'text-sm';
+                        menuItem.innerHTML = `
+                            <div class="flex justify-between">
+                                <span class="font-medium">${item.name}</span>
+                                <span class="text-gray-700">${item.price}</span>
+                            </div>
+                            ${item.description ? `<p class="text-gray-600 text-xs mt-1">${item.description}</p>` : ''}
+                        `;
+                        menuList.appendChild(menuItem);
+                    });
+
+                    menuSection.appendChild(menuList);
+                    card.appendChild(menuSection);
+                }
+
+                return card;
+            }
+
+            // Helper function to get appropriate color class for rating
+            function getRatingClass(rating) {
+                if (!rating || rating === 'N/A') return 'bg-gray-100 text-gray-600';
+
+                switch(rating) {
+                    case 'Amazing':
+                        return 'bg-green-100 text-green-800';
+                    case 'Very good':
+                        return 'bg-teal-100 text-teal-800';
+                    case 'Good':
+                        return 'bg-blue-100 text-blue-800';
+                    default:
+                        return 'bg-gray-100 text-gray-600';
+                }
+            }
+
+            function handleSubmit(event) {
+                event.preventDefault();
+                const submitBtn = document.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Searching...';
+
+                const query = document.getElementById('queryInput').value.trim();
+                if (!query) return;
+
+                // Clear previous results
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+
+                // Clear previous restaurants
+                const restaurantsContainer = document.getElementById('restaurantsContainer');
+                restaurantsContainer.innerHTML = '<div class="text-gray-500 italic text-center py-8">Loading restaurants...</div>';
+
+                // Show status
+                updateStatus('Connecting...', 'info');
+
+                // Create WebSocket connection with the query
+                const ws = new WebSocket(`ws://localhost:8080/search?input=${encodeURIComponent(query)}`);
+
+                // Create a single message container for the current response
+                const messageElement = document.createElement('div');
+                messageElement.className = 'p-4 border-b border-gray-200 last:border-0 hover:bg-gray-100 transition-colors duration-150 whitespace-pre-wrap';
+                resultsDiv.appendChild(messageElement);
+
+                // Keep track of accumulated text
+                let accumulatedText = '';
+
+                ws.onopen = () => {
+                    updateStatus('Connected - Searching...', 'success');
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        // Parse the JSON string
+                        const message = JSON.parse(event.data);
+
+                        if (message.type === "restaurants") {
+                            // Process restaurants data
+                            const restaurantsData = JSON.parse(message.data);
+                            displayRestaurants(restaurantsData.results);
+                            return
+                        }
+                        if (message.type === "debug") {
+                            console.log(message)
+                            return
+                        }
+
+
+                        // Handle chat messages
+                        accumulatedText += message.data;
+                        messageElement.innerHTML = marked.parse(accumulatedText);
+                        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+                    } catch (error) {
+                        console.error('Error processing message:', error);
+                        // If parsing fails, just append the raw text
+                        accumulatedText += event.data;
+                        messageElement.innerHTML = marked.parse(accumulatedText);
+                    }
+                };
+
+                ws.onclose = () => {
+                    updateStatus('Search completed', 'success');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Search';
+                };
+
+                ws.onerror = () => {
+                    updateStatus('Error connecting to server', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Search';
+
+                    // Show error in restaurants container
+                    restaurantsContainer.innerHTML = '<div class="text-red-500 italic text-center py-8">Failed to load restaurants. Please try again.</div>';
+                };
+            }
+
+            function displayRestaurants(restaurants) {
+                const container = document.getElementById('restaurantsContainer');
+                container.innerHTML = '';
+
+                if (!restaurants || restaurants.length === 0) {
+                    container.innerHTML = '<div class="text-gray-500 italic text-center py-8">No restaurants found</div>';
+                    return;
+                }
+
+                // Create and append restaurant cards
+                restaurants.forEach(restaurant => {
+                    const card = createRestaurantCard(restaurant);
+                    container.appendChild(card);
+                });
+            }
+
+            function updateStatus(message, type = 'info') {
+                const statusDiv = document.getElementById('status');
+                const colors = {
+                    info: 'bg-blue-100 text-blue-800',
+                    error: 'bg-red-100 text-red-800',
+                    success: 'bg-green-100 text-green-800'
+                };
+                statusDiv.className = `mt-4 p-2 rounded-lg text-sm ${colors[type]}`;
+                statusDiv.textContent = message;
+                statusDiv.classList.remove('hidden');
+            }
+
+            document.getElementById('queryInput').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    document.getElementById('searchForm').requestSubmit();
+                }
+            });
+        </script>
+    </body>
+</html>

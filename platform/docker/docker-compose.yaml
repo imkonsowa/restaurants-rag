@@ -1,0 +1,79 @@
+services:
+  nats:
+    image: nats:latest
+    command: -js
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - nats-data:/data
+    environment:
+      - JS_DOMAIN=rag
+      - JS_STORE_DIR=/data
+    restart: unless-stopped
+    networks:
+      - rag
+
+  postgis:
+    image: imkonsowa/postgis-vector-wal2json:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=restaurants
+    restart: unless-stopped
+    volumes:
+      - postgis-data:/var/lib/postgresql/data
+      - ../sql:/docker-entrypoint-initdb.d
+    networks:
+      - rag
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  agent:
+    image: imkonsowa/agent:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - rag
+    restart: unless-stopped
+    depends_on:
+      postgis:
+        condition: service_healthy
+
+  cdc:
+    image: imkonsowa/cdc:latest
+    restart: unless-stopped
+    networks:
+      - rag
+    depends_on:
+      postgis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+
+  embedder:
+    image: imkonsowa/embedder:latest
+    restart: unless-stopped
+    networks:
+      - rag
+    depends_on:
+      postgis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  rag:
+    driver: bridge
+
+volumes:
+  postgis-data:
+  nats-data:
+
