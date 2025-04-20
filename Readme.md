@@ -53,7 +53,9 @@ Test the following queries in the search input:
 ├── agent: retrieval logic and the web interface 
 ├── cdc: captures data changes and publish to NATS
 ├── embedder: listens to NATS and embeds the restaurant data
+├── models: types for db
+├── config: app configuration
 ├── platform
-    ├── docker: contains the docker-compose file and images docker files
+    ├── docker: app components docker files
     ├── sql: database init sql scripts
 ```
