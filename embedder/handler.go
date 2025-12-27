@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"math"
 
 	_ "github.com/lib/pq"
+	"github.com/pgvector/pgvector-go"
 	"github.com/tmc/langchaingo/llms/ollama"
 )
 
@@ -56,7 +56,7 @@ func (h *Handler) HandleRestaurantCDCMessage(ctx context.Context, msg []byte) er
 		slog.Warn("Failed to generate restaurant vector", "err", err)
 	}
 
-	if err := h.pg.UpdateRestaurantVector(ctx, restaurantId, vectorToStr(vector)); err != nil {
+	if err := h.pg.UpdateRestaurantVector(ctx, restaurantId, pgvector.NewVector(vector)); err != nil {
 		slog.Warn("Failed to update restaurant vector", "err", err)
 	}
 
@@ -83,7 +83,7 @@ func (h *Handler) HandleMenuItemCDCMessage(ctx context.Context, msg []byte) erro
 		slog.Warn("Failed to generate menu item vector", "err", err)
 	}
 
-	if err := h.pg.UpdateMenuItemVector(ctx, menuItemId, vectorToStr(vector)); err != nil {
+	if err := h.pg.UpdateMenuItemVector(ctx, menuItemId, pgvector.NewVector(vector)); err != nil {
 		slog.Warn("Failed to update menu item vector", "err", err)
 	}
 
@@ -110,37 +110,9 @@ func (h *Handler) HandleCategoryCDCMessage(ctx context.Context, msg []byte) erro
 		slog.Warn("Failed to generate category vector", "err", err)
 	}
 
-	if err := h.pg.UpdateCategoryVector(ctx, categoryId, vectorToStr(vector)); err != nil {
+	if err := h.pg.UpdateCategoryVector(ctx, categoryId, pgvector.NewVector(vector)); err != nil {
 		slog.Warn("Failed to update category vector", "err", err)
 	}
 
 	return nil
-}
-
-func normalizeVector(vec []float32) []float32 {
-	var sum float32
-	for _, v := range vec {
-		sum += v * v
-	}
-	norm := float32(math.Sqrt(float64(sum)))
-	for i := range vec {
-		vec[i] /= norm
-	}
-
-	return vec
-}
-
-func vectorToStr(vector []float32) string {
-	normalizeVector(vector)
-
-	vectorStr := "["
-	for i, v := range vector {
-		if i > 0 {
-			vectorStr += ","
-		}
-		vectorStr += fmt.Sprintf("%f", v)
-	}
-	vectorStr += "]"
-
-	return vectorStr
 }

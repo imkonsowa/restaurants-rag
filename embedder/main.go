@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/imkonsowa/restaurants-rag/config"
-	"github.com/nats-io/nats.go"
 	"github.com/tmc/langchaingo/llms/ollama"
 	"golang.org/x/sync/errgroup"
 )
@@ -56,26 +55,27 @@ func main() {
 		cfg.Nats.CategoriesSubject:  handler.HandleCategoryCDCMessage,
 	}
 
+	workers := cfg.Embedder.Workers
+	if workers < 1 {
+		workers = 2
+	}
+	queueSize := cfg.Embedder.QueueSize
+	if queueSize < 1 {
+		queueSize = 100
+	}
+	slog.Info("Starting embedder", "workers", workers, "queueSize", queueSize)
+
+	workerPools := make(map[string]*WorkerPool)
+	for subject, h := range subjectHandlers {
+		workerPools[subject] = NewWorkerPool(ctx, workers, queueSize, h)
+	}
+
 	worker := errgroup.Group{}
 	errChan := make(chan error)
 
-	for subject, h := range subjectHandlers {
+	for subject, pool := range workerPools {
 		worker.Go(func() error {
-			return nc.Subscribe(ctx, subject, func(m *nats.Msg) {
-				if err := h(ctx, m.Data); err != nil {
-					slog.Error("Failed to handle CDC message", "err", err, "subject", subject)
-
-					if err := m.Nak(); err != nil {
-						slog.Error("Failed to nak message", "err", err)
-					}
-
-					return
-				}
-
-				if err := m.Ack(); err != nil {
-					slog.Error("Failed to ack message", "err", err)
-				}
-			})
+			return nc.Subscribe(ctx, subject, pool)
 		})
 	}
 

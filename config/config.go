@@ -63,12 +63,18 @@ func (s *Server) Address() string {
 	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }
 
+type Embedder struct {
+	Workers   int `mapstructure:"workers"`
+	QueueSize int `mapstructure:"queueSize"`
+}
+
 type Config struct {
 	Postgres    Postgres    `mapstructure:"postgres"`
 	Nats        Nats        `mapstructure:"nats"`
 	Ollama      Ollama      `mapstructure:"ollama"`
 	Replication Replication `mapstructure:"replication"`
 	Server      Server      `mapstructure:"server"`
+	Embedder    Embedder    `mapstructure:"embedder"`
 }
 
 func LoadConfig() *Config {

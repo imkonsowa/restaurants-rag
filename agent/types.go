@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	DefaultNearbyDistance = 1000 // 1km for "nearby"
-	DefaultHighRating     = 4    // for "highly rated"
-	DefaultMaxDistance    = 5000 // 5km default max
-	DefaultMinRating      = 3    // default minimum rating
+	DefaultNearbyDistance = 1000  // 1km for "nearby"
+	DefaultHighRating     = 4     // for "highly rated"
+	DefaultMaxDistance    = 20000 // 5km default max
+	DefaultMinRating      = 3     // default minimum rating
 )
 
 type GeoPoint struct {

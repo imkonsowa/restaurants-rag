@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/lib/pq"
+	"github.com/pgvector/pgvector-go"
 	"github.com/twpayne/go-geom"
 	"github.com/twpayne/go-geom/encoding/ewkb"
 	"gorm.io/gorm"
@@ -65,12 +66,13 @@ func (loc Location) GormValue(ctx context.Context, db *gorm.DB) clause.Expr {
 }
 
 type Restaurant struct {
-	ID       uint64         `gorm:"primaryKey" json:"id"`
-	Name     string         `json:"name"`
-	Area     string         `json:"area"`
-	Rating   float64        `json:"rating"`
-	Badges   pq.StringArray `gorm:"type:text[]" json:"badges"`
-	Location Location       `json:"location"`
+	ID        uint64          `gorm:"primaryKey" json:"id"`
+	Name      string          `json:"name"`
+	Area      string          `json:"area"`
+	Rating    float64         `json:"rating"`
+	Badges    pq.StringArray  `gorm:"type:text[]" json:"badges"`
+	Location  Location        `json:"location"`
+	Embedding pgvector.Vector `gorm:"type:vector(768)" json:"-"`
 }
 
 func (r *Restaurant) TableName() string {
@@ -82,9 +84,10 @@ func (r *Restaurant) Stringify() string {
 }
 
 type Category struct {
-	ID           uint   `gorm:"primaryKey" json:"id"`
-	RestaurantID uint   `json:"restaurant_id"`
-	Name         string `json:"name"`
+	ID           uint            `gorm:"primaryKey" json:"id"`
+	RestaurantID uint            `json:"restaurant_id"`
+	Name         string          `json:"name"`
+	Embedding    pgvector.Vector `gorm:"type:vector(768)" json:"-"`
 }
 
 func (c *Category) TableName() string {
@@ -96,12 +99,13 @@ func (c *Category) Stringify() string {
 }
 
 type MenuItem struct {
-	ID           uint64  `gorm:"primaryKey" json:"id"`
-	RestaurantID uint64  `json:"restaurant_id"`
-	Category     string  `json:"category"`
-	Name         string  `json:"name"`
-	Price        float64 `json:"price"`
-	Description  string  `json:"description"`
+	ID           uint64          `gorm:"primaryKey" json:"id"`
+	RestaurantID uint64          `json:"restaurant_id"`
+	Category     string          `json:"category"`
+	Name         string          `json:"name"`
+	Price        float64         `json:"price"`
+	Description  string          `json:"description"`
+	Embedding    pgvector.Vector `gorm:"type:vector(768)" json:"-"`
 }
 
 func (m *MenuItem) TableName() string {

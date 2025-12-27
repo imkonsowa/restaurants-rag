@@ -16,7 +16,7 @@ up:
 	docker-compose -p rag -f platform/docker/docker-compose.yaml up -d
 
 down:
-	docker compose -p rag -f platform/docker/docker-compose.yaml down -v
+	docker compose -p rag -f platform/docker/docker-compose.yaml down
 
 run:
 	make -j4 images
@@ -24,3 +24,6 @@ run:
 
 add-restaurants:
 	curl -X POST -H "Content-Type: application/json" -d @restaurants_sample.json http://localhost:8080/restaurants
+
+backfill:
+	POSTGRES_HOST=localhost NATS_HOST=localhost go run cmd/backfill/main.go

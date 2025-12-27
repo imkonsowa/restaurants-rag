@@ -67,7 +67,9 @@
         </div>
 
         <script>
-            // Adjust heights on load and resize
+            let userLatitude = null;
+            let userLongitude = null;
+
             function adjustHeights() {
                 const vh = window.innerHeight;
                 document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -76,17 +78,13 @@
             window.addEventListener('load', adjustHeights);
             window.addEventListener('resize', adjustHeights);
 
-            // Function to get user's location
             function getUserLocation() {
                 if ("geolocation" in navigator) {
-                    // Request location permission and get coordinates
                     navigator.geolocation.getCurrentPosition(
-                            // Success callback
                             function(position) {
-                                const latitude = position.coords.latitude;
-                                const longitude = position.coords.longitude;
-                                console.log("Latitude:", latitude);
-                                console.log("Longitude:", longitude);
+                                userLatitude = position.coords.latitude;
+                                userLongitude = position.coords.longitude;
+                                console.log("Location acquired:", userLatitude, userLongitude);
                             },
                             // Error callback
                             function(error) {
@@ -215,8 +213,11 @@
                 // Show status
                 updateStatus('Connecting...', 'info');
 
-                // Create WebSocket connection with the query
-                const ws = new WebSocket(`ws://localhost:8080/search?input=${encodeURIComponent(query)}`);
+                let wsUrl = `ws://localhost:8080/search?input=${encodeURIComponent(query)}`;
+                if (userLatitude !== null && userLongitude !== null) {
+                    wsUrl += `&latitude=${userLatitude}&longitude=${userLongitude}`;
+                }
+                const ws = new WebSocket(wsUrl);
 
                 // Create a single message container for the current response
                 const messageElement = document.createElement('div');

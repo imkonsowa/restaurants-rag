@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math"
 	"strings"
-	"time"
 
 	"github.com/imkonsowa/restaurants-rag/models"
 	_ "github.com/lib/pq"
@@ -94,7 +92,6 @@ func (h *Handler) SearchByUserQuery(
 		filter := SearchFilter{
 			MaxDistance: DefaultMaxDistance,
 			MinRating:   DefaultMinRating,
-			CurrentTime: time.Now(),
 			Location:    location,
 		}
 
@@ -190,19 +187,6 @@ func (h *Handler) SearchByUserQuery(
 	}()
 
 	return resultChan
-}
-
-func normalizeVector(vec []float32) []float32 {
-	var sum float32
-	for _, v := range vec {
-		sum += v * v
-	}
-	norm := float32(math.Sqrt(float64(sum)))
-	for i := range vec {
-		vec[i] /= norm
-	}
-
-	return vec
 }
 
 func (h *Handler) GenerateSummary(

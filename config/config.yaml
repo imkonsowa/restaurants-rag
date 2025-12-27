@@ -28,3 +28,7 @@ replication:
 server:
   port: 8080
   host: 0.0.0.0
+
+embedder:
+  workers: 2
+  queueSize: 100

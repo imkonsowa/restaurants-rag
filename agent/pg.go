@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/imkonsowa/restaurants-rag/models"
+	"github.com/pgvector/pgvector-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -39,26 +40,9 @@ func NewRestaurantPg(connStr string) (*Pg, error) {
 	return &Pg{db: db}, nil
 }
 
-func vectorToStr(vector []float32) string {
-	normalizeVector(vector)
-
-	vectorStr := "["
-	for i, v := range vector {
-		if i > 0 {
-			vectorStr += ","
-		}
-		vectorStr += fmt.Sprintf("%f", v)
-	}
-	vectorStr += "]"
-
-	return vectorStr
-}
-
 type SearchFilter struct {
-	Cuisine     string    `json:"cuisine,omitempty"`
 	PriceRange  string    `json:"price_range,omitempty"`
 	MinRating   float64   `json:"min_rating,omitempty"`
-	CurrentTime time.Time `json:"current_time,omitempty"`
 	MaxDistance float64   `json:"max_distance"`
 	Location    *GeoPoint `json:"location"`
 }
@@ -68,125 +52,76 @@ func (s *Pg) Search(
 	queryVector []float32,
 	filter SearchFilter,
 ) ([]models.RestaurantWithMenuItems, error) {
-	vectorStr := vectorToStr(queryVector)
+	vec := pgvector.NewVector(queryVector)
 
-	// Step 1: Find matching restaurants
-	var matchingRestaurants []models.Restaurant
-	restaurantQuery := s.db.WithContext(ctx).
-		Model(&models.Restaurant{}).
-		Select("*, 1 - (embedding <=> ?) as similarity", vectorStr).
-		Where("1 - (embedding <=> ?) >= 0.9", vectorStr).
-		Order("similarity DESC").
-		Limit(10)
-
-	menuQuery := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx).
 		Table("menu_items").
-		Select("menu_items.*, restaurant_id, 1 - (menu_items.embedding <=> ?) as mi_similarity", vectorStr).
-		Where("1 - (menu_items.embedding <=> ?) >= 0.5", vectorStr).
-		Order("mi_similarity DESC").
+		Select("menu_items.*, restaurant_id, 1 - (menu_items.embedding <=> ?) as similarity", vec).
+		Where("1 - (menu_items.embedding <=> ?) >= 0.6", vec).
+		Order("similarity DESC").
 		Joins("JOIN restaurants ON menu_items.restaurant_id = restaurants.id")
 
 	if filter.MaxDistance > 0 && filter.Location != nil {
-		restaurantQuery = restaurantQuery.Where("ST_Distance(location::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)) <= ?", filter.Location.Lat, filter.Location.Long, filter.MaxDistance)
-
-		menuQuery = menuQuery.Where("ST_Distance(restaurants.location::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)) <= ?", filter.Location.Lat, filter.Location.Long, filter.MaxDistance)
+		query = query.Where(
+			"ST_Distance(restaurants.location::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)) <= ?",
+			filter.Location.Lat, filter.Location.Long, filter.MaxDistance,
+		)
 	}
 	if filter.MinRating > 0 {
-		restaurantQuery = restaurantQuery.Where("rating >= ?", filter.MinRating)
-
-		menuQuery = menuQuery.Where("restaurants.rating >= ?", filter.MinRating)
+		query = query.Where("restaurants.rating >= ?", filter.MinRating)
 	}
 
-	if err := restaurantQuery.Find(&matchingRestaurants).Error; err != nil {
-		return nil, fmt.Errorf("failed to query matching restaurants: %w", err)
-	}
-
-	// Step 2: Find matching menu items
-	var matchingMenuItems []struct {
+	var matchingItems []struct {
 		models.MenuItem
 		RestaurantID uint64
 		Similarity   float64
 	}
-
-	if err := menuQuery.Scan(&matchingMenuItems).Error; err != nil {
-		return nil, fmt.Errorf("failed to query matching menu items: %w", err)
+	if err := query.Scan(&matchingItems).Error; err != nil {
+		return nil, fmt.Errorf("query menu items: %w", err)
 	}
 
-	// Step 3: Group menu items by restaurant
-	menuItemsByRestaurant := make(map[uint64][]models.MenuItem)
-	for _, item := range matchingMenuItems {
-		menuItemsByRestaurant[item.RestaurantID] = append(
-			menuItemsByRestaurant[item.RestaurantID],
-			item.MenuItem,
-		)
+	type restaurantMatch struct {
+		items          []models.MenuItem
+		bestSimilarity float64
 	}
+	matches := make(map[uint64]*restaurantMatch)
+	var orderedIDs []uint64
 
-	// Step 4: Create a set of unique restaurant IDs that matched either by restaurant or menu item
-	matchedRestaurantIDs := make(map[uint64]bool)
-
-	// Add restaurants that matched directly
-	for _, r := range matchingRestaurants {
-		matchedRestaurantIDs[r.ID] = true
-	}
-
-	// Add restaurants that matched via menu items
-	for _, item := range matchingMenuItems {
-		matchedRestaurantIDs[item.RestaurantID] = true
-	}
-
-	// Step 5: For any restaurants that matched via menu items but weren't in our direct restaurant matches,
-	// we need to fetch them separately
-	var additionalRestaurantIDs []uint64
-	for id := range matchedRestaurantIDs {
-		found := false
-		for _, r := range matchingRestaurants {
-			if r.ID == id {
-				found = true
-				break
-			}
+	for _, item := range matchingItems {
+		m, exists := matches[item.RestaurantID]
+		if !exists {
+			m = &restaurantMatch{}
+			matches[item.RestaurantID] = m
+			orderedIDs = append(orderedIDs, item.RestaurantID)
 		}
-		if !found {
-			additionalRestaurantIDs = append(additionalRestaurantIDs, id)
+		m.items = append(m.items, item.MenuItem)
+		if item.Similarity > m.bestSimilarity {
+			m.bestSimilarity = item.Similarity
 		}
 	}
 
-	if len(additionalRestaurantIDs) > 0 {
-		var additionalRestaurants []models.Restaurant
-		if err := s.db.WithContext(ctx).
-			Where("id IN ?", additionalRestaurantIDs).
-			Find(&additionalRestaurants).Error; err != nil {
-			return nil, fmt.Errorf("failed to fetch additional restaurants: %w", err)
-		}
-		matchingRestaurants = append(matchingRestaurants, additionalRestaurants...)
+	if len(orderedIDs) == 0 {
+		return nil, nil
+	}
+	if len(orderedIDs) > 10 {
+		orderedIDs = orderedIDs[:10]
 	}
 
-	//var restaurantIds []uint64
-	//for _, restaurant := range matchingRestaurants {
-	//	restaurantIds = append(restaurantIds, restaurant.ID)
-	//}
-	//
-	//var allMenuItems []models.MenuItem
-	//if err := s.db.WithContext(ctx).
-	//	Where("restaurant_id IN ?", restaurantIds).
-	//	Find(&allMenuItems).Error; err != nil {
-	//	return nil, fmt.Errorf("failed to fetch menu items: %w", err)
-	//}
-	//
-	//// Group menu items by restaurant
-	//for _, item := range allMenuItems {
-	//	menuItemsByRestaurant[item.RestaurantID] = append(
-	//		menuItemsByRestaurant[item.RestaurantID],
-	//		item,
-	//	)
-	//}
+	var restaurants []models.Restaurant
+	if err := s.db.WithContext(ctx).Where("id IN ?", orderedIDs).Find(&restaurants).Error; err != nil {
+		return nil, fmt.Errorf("fetch restaurants: %w", err)
+	}
 
-	// Step 6: Assemble the final results
-	var results []models.RestaurantWithMenuItems
-	for _, restaurant := range matchingRestaurants {
-		menuItems := menuItemsByRestaurant[restaurant.ID]
+	restaurantMap := make(map[uint64]models.Restaurant)
+	for _, r := range restaurants {
+		restaurantMap[r.ID] = r
+	}
+
+	results := make([]models.RestaurantWithMenuItems, 0, len(orderedIDs))
+	for _, id := range orderedIDs {
 		results = append(results, models.RestaurantWithMenuItems{
-			Restaurant: restaurant,
-			MenuItems:  menuItems,
+			Restaurant: restaurantMap[id],
+			MenuItems:  matches[id].items,
 		})
 	}
 

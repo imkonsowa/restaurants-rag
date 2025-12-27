@@ -37,7 +37,7 @@ func (c *Client) Close() {
 	c.conn.Close()
 }
 
-func (c *Client) Subscribe(ctx context.Context, subject string, handler func(m *nats.Msg)) error {
+func (c *Client) Subscribe(ctx context.Context, subject string, pool *WorkerPool) error {
 	subscription, err := c.js.PullSubscribe(subject, strings.ReplaceAll(subject+".consumer", ".", "-"), nats.ManualAck())
 	if err != nil {
 		return err
@@ -49,20 +49,16 @@ func (c *Client) Subscribe(ctx context.Context, subject string, handler func(m *
 			if err := subscription.Unsubscribe(); err != nil {
 				slog.Warn("failed to unsubscribe from subject", "subject", subject, "error", err)
 			}
-
 			return nil
 		default:
-			msgs, err := subscription.Fetch(4, nats.MaxWait(200*time.Millisecond))
-			// TODO: add retries
+			msgs, err := subscription.Fetch(10, nats.MaxWait(200*time.Millisecond))
 			if err != nil && !errors.Is(err, nats.ErrTimeout) {
 				return err
 			}
-			if len(msgs) == 0 {
-				continue
-			}
-
 			for _, msg := range msgs {
-				handler(msg)
+				if !pool.Submit(ctx, msg) {
+					return nil
+				}
 			}
 		}
 	}
